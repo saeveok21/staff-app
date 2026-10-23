@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>직원앱 · 현대옥 유성구암점</title>
+<meta name="theme-color" content="#1f6b58">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="직원앱">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  html, body { margin: 0; height: 100%; background: #f5f3ee; }
+  body { font-family: -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; }
+  #app { position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - env(safe-area-inset-top)); border: 0; background: #f5f3ee; }
+  #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #f5f3ee; color: #6a6f6c; font-size: 15px; z-index: 2; transition: opacity .3s; }
+  #splash img { width: 88px; height: 88px; border-radius: 22px; box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+  #splash.hide { opacity: 0; pointer-events: none; }
+  #setup { display: none; max-width: 420px; margin: 18vh auto 0; padding: 0 20px; color: #1c1f1e; line-height: 1.7; }
+  #setup b { color: #b42318; }
+</style>
+</head>
+<body>
+<div id="splash"><img src="icon-192.png" alt=""><span id="msg">불러오는 중…</span></div>
+<div id="setup">
+  <h2>설정이 아직 안 됐어요</h2>
+  <p>이 파일(index.html) 안의 <b>APP_URL</b> 자리에 Apps Script 웹앱 주소(/exec로 끝나는 주소)를 넣어주세요.</p>
+</div>
+<iframe id="app" title="직원앱" allow="clipboard-write"></iframe>
+<script>
+  // ▼▼▼ 여기에 Apps Script 웹앱 주소를 붙여넣으세요 (따옴표 안에, /exec로 끝나는 주소) ▼▼▼
+  const APP_URL = '여기에_웹앱_주소를_붙여넣으세요';
+  // ▲▲▲ 이 한 줄만 바꾸면 됩니다 ▲▲▲
+
+  const frame = document.getElementById('app');
+  const splash = document.getElementById('splash');
+  if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(APP_URL)) {
+    splash.style.display = 'none';
+    frame.style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
+  } else {
+    frame.addEventListener('load', () => setTimeout(() => splash.classList.add('hide'), 300));
+    setTimeout(() => { document.getElementById('msg').textContent = '인터넷 연결이 느려요. 잠시만 기다려주세요…'; }, 8000);
+    frame.src = APP_URL;
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>

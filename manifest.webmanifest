@@ -1,0 +1,16 @@
+{
+  "name": "현대옥 유성구암점 직원앱",
+  "short_name": "직원앱",
+  "description": "현대옥 유성구암점 직원 소통 앱 (공지, 인수인계, 스케줄, 출퇴근)",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f3ee",
+  "theme_color": "#1f6b58",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

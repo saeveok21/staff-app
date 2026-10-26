@@ -13,14 +13,33 @@
 <meta name="apple-mobile-web-app-title" content="직원앱">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
+  :root { --bar: 0px; }
   html, body { margin: 0; height: 100%; background: #f5f3ee; }
-  body { font-family: -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; }
-  #app { position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - env(safe-area-inset-top)); border: 0; background: #f5f3ee; }
-  #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #f5f3ee; color: #6a6f6c; font-size: 15px; z-index: 2; transition: opacity .3s; }
+  body { font-family: -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; color: #1c1f1e; }
+  #app { position: fixed; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top) + var(--bar)); width: 100%; height: calc(100% - env(safe-area-inset-top) - var(--bar)); border: 0; background: #f5f3ee; }
+  #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #f5f3ee; color: #6a6f6c; font-size: 15px; z-index: 5; transition: opacity .3s; }
   #splash img { width: 88px; height: 88px; border-radius: 22px; box-shadow: 0 6px 20px rgba(0,0,0,.12); }
   #splash.hide { opacity: 0; pointer-events: none; }
-  #setup { display: none; max-width: 420px; margin: 18vh auto 0; padding: 0 20px; color: #1c1f1e; line-height: 1.7; }
+  #setup { display: none; max-width: 420px; margin: 18vh auto 0; padding: 0 20px; line-height: 1.7; }
   #setup b { color: #b42318; }
+
+  /* 앱으로 설치 안내 막대 */
+  #bar { position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; height: 64px; display: none; align-items: center; gap: 12px; padding: 0 12px 0 14px; background: #1f6b58; color: #fff; z-index: 4; box-sizing: border-box; }
+  #bar img { width: 40px; height: 40px; border-radius: 10px; flex: none; }
+  #bar .t { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95; }
+  #bar .t b { display: block; font-size: 15px; }
+  #bar button { font: inherit; border: 0; cursor: pointer; }
+  #bar .go { background: #fff; color: #1f6b58; font-weight: 800; font-size: 15px; padding: 9px 14px; border-radius: 10px; white-space: nowrap; }
+  #bar .x { background: none; color: rgba(255,255,255,.75); font-size: 22px; padding: 4px 6px; }
+
+  /* 설치 방법 안내 (아이폰 등) */
+  #sheet { position: fixed; inset: 0; background: rgba(15,20,18,.5); display: none; align-items: flex-end; justify-content: center; z-index: 6; }
+  #sheet .box { background: #fff; width: 100%; max-width: 520px; border-radius: 20px 20px 0 0; padding: 22px 20px calc(24px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+  #sheet h3 { margin: 0 0 14px; font-size: 19px; }
+  #sheet ol { margin: 0; padding-left: 22px; line-height: 1.9; font-size: 16px; }
+  #sheet .ic { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1.5px solid #1a73e8; color: #1a73e8; border-radius: 6px; font-weight: 800; vertical-align: middle; margin: 0 2px; font-size: 15px; }
+  #sheet .ok { width: 100%; margin-top: 18px; font: inherit; font-weight: 700; font-size: 16px; padding: 13px; border: 0; border-radius: 12px; background: #1f6b58; color: #fff; }
+  #sheet .arrow { text-align: center; font-size: 13px; color: #6a6f6c; margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -29,12 +48,38 @@
   <h2>설정이 아직 안 됐어요</h2>
   <p>이 파일(index.html) 안의 <b>APP_URL</b> 자리에 Apps Script 웹앱 주소(/exec로 끝나는 주소)를 넣어주세요.</p>
 </div>
+
+<div id="bar">
+  <img src="icon-192.png" alt="">
+  <div class="t"><b>직원앱 설치하기</b>홈 화면에서 바로 열려요</div>
+  <button class="go" id="install">앱으로 설치</button>
+  <button class="x" id="close" aria-label="닫기">×</button>
+</div>
+
+<div id="sheet"><div class="box">
+  <h3 id="sheet-title">아이폰에 설치하는 방법</h3>
+  <ol id="sheet-steps"></ol>
+  <button class="ok" id="sheet-ok">확인</button>
+</div></div>
+
 <iframe id="app" title="직원앱" allow="clipboard-write"></iframe>
 <script>
   // ▼▼▼ 여기에 Apps Script 웹앱 주소를 붙여넣으세요 (따옴표 안에, /exec로 끝나는 주소) ▼▼▼
   const APP_URL = 'https://script.google.com/macros/s/AKfycbyWRu1XTV-DALKGkW0rJUSSk54liK8jXLH_0TNZaICjFAUQiudPsJEXk0fevsJzy-u4Nw/exec';
   // ▲▲▲ 이 한 줄만 바꾸면 됩니다 ▲▲▲
 
+  const ua = navigator.userAgent;
+  const DEMO = location.hash.replace('#demo-', '');          // 화면 확인용 (예: #demo-android, #demo-ios)
+  const isIOS = /iPhone|iPad|iPod/i.test(ua) || DEMO === 'ios';
+  const isKakao = /KAKAOTALK/i.test(ua);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  // 1) 카톡 안에서 열렸으면 일반 브라우저로 자동으로 넘김 (설치는 일반 브라우저에서만 가능)
+  if (isKakao) {
+    location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href.split('#')[0]);
+  }
+
+  // 2) 앱 화면 띄우기
   const frame = document.getElementById('app');
   const splash = document.getElementById('splash');
   if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(APP_URL)) {
@@ -46,6 +91,63 @@
     setTimeout(() => { document.getElementById('msg').textContent = '인터넷 연결이 느려요. 잠시만 기다려주세요…'; }, 8000);
     frame.src = APP_URL;
   }
+
+  // 3) '앱으로 설치' 막대
+  const bar = document.getElementById('bar');
+  const KEY = 'install_bar_closed';
+  let deferred = null;
+  function closedRecently() {
+    try { return Date.now() - Number(localStorage.getItem(KEY) || 0) < 3 * 864e5; } catch (e) { return false; }
+  }
+  function showBar() {
+    if (isStandalone || (closedRecently() && !DEMO)) return;
+    bar.style.display = 'flex';
+    document.documentElement.style.setProperty('--bar', '64px');
+  }
+  function hideBar(remember) {
+    bar.style.display = 'none';
+    document.documentElement.style.setProperty('--bar', '0px');
+    if (remember) { try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {} }
+  }
+  function showSheet(title, steps) {
+    document.getElementById('sheet-title').textContent = title;
+    document.getElementById('sheet-steps').innerHTML = steps.map(s => '<li>' + s + '</li>').join('');
+    document.getElementById('sheet').style.display = 'flex';
+  }
+  document.getElementById('sheet-ok').onclick = () => { document.getElementById('sheet').style.display = 'none'; };
+  document.getElementById('close').onclick = () => hideBar(true);
+
+  // 갤럭시 등: 브라우저가 설치 창을 띄울 준비가 되면 버튼으로 바로 설치
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; showBar(); });
+  window.addEventListener('appinstalled', () => hideBar(false));
+
+  document.getElementById('install').onclick = async () => {
+    if (deferred) {
+      deferred.prompt();
+      const r = await deferred.userChoice.catch(() => null);
+      deferred = null;
+      if (r && r.outcome === 'accepted') hideBar(false);
+      return;
+    }
+    if (isIOS) {
+      showSheet('아이폰에 설치하는 방법', [
+        '사파리 화면 아래쪽 <span class="ic">⇧</span> <b>공유 버튼</b>을 눌러요',
+        '목록을 올려서 <b>홈 화면에 추가</b>를 눌러요',
+        '오른쪽 위 <b>추가</b>를 누르면 끝!'
+      ]);
+    } else {
+      showSheet('설치하는 방법', [
+        '크롬: 오른쪽 위 <b>⋮</b> → <b>앱 설치</b> (또는 홈 화면에 추가)',
+        '삼성 인터넷: 오른쪽 아래 <b>≡</b> → <b>페이지 추가</b> → <b>홈 화면</b>',
+        '홈 화면에 생긴 <b>직원앱</b> 아이콘으로 열어요'
+      ]);
+    }
+  };
+
+  // 아이폰은 설치 창 기능이 없어서 안내 막대를 바로 보여줌. 다른 기기도 3초 안에 설치 준비가 안 되면 안내 막대를 보여줌
+  if (isIOS) showBar();
+  else setTimeout(() => { if (!deferred) showBar(); }, 3000);
+  if (DEMO) showBar();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

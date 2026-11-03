@@ -92,6 +92,19 @@
     frame.src = APP_URL;
   }
 
+  // 2-1) 로그인 정보 보관: 아이폰은 앱 안쪽 화면의 저장 정보를 지우므로, 이 페이지가 대신 보관해 건네줌
+  const TOKEN_KEY = 'sa_token';
+  window.addEventListener('message', (e) => {
+    if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(e.origin)) return; // 우리 앱 화면에서 온 요청만
+    const d = e.data;
+    if (!d || !d.sa) return;
+    try {
+      if (d.type === 'get') e.source.postMessage({ sa: 1, type: 'token', token: localStorage.getItem(TOKEN_KEY) }, e.origin);
+      else if (d.type === 'set' && d.token) localStorage.setItem(TOKEN_KEY, String(d.token));
+      else if (d.type === 'clear') localStorage.removeItem(TOKEN_KEY);
+    } catch (err) {}
+  });
+
   // 3) '앱으로 설치' 막대
   const bar = document.getElementById('bar');
   const KEY = 'install_bar_closed';

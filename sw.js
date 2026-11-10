@@ -9,9 +9,14 @@ const OFFLINE = '<!doctype html><meta charset="utf-8"><meta name="viewport" cont
   + '<p style="color:#6a6f6c">와이파이나 데이터를 확인한 뒤 다시 열어주세요</p>'
   + '<button onclick="location.reload()" style="font-size:16px;padding:10px 18px;border-radius:12px;border:1px solid #ccc;background:#fff">다시 시도</button></div></body>';
 
+// 앱을 열 때마다 설치 페이지(index.html)를 항상 새로 받아옴 → GitHub에서 고친 내용이 바로 반영됨
 self.addEventListener('fetch', (e) => {
   if (e.request.mode !== 'navigate') return;
-  e.respondWith(fetch(e.request).catch(() => new Response(OFFLINE, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })));
+  e.respondWith(
+    fetch(e.request.url, { cache: 'no-store', credentials: 'same-origin' })
+      .catch(() => fetch(e.request))
+      .catch(() => new Response(OFFLINE, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }))
+  );
 });
 
 // 공지 알림 받기 (Firebase가 보낸 메시지를 휴대폰 알림으로 표시)

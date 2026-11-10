@@ -80,6 +80,7 @@
   const isIOS = /iPhone|iPad|iPod/i.test(ua) || DEMO === 'ios';
   const isKakao = /KAKAOTALK/i.test(ua);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const SHELL_VER = '1110b';   // 설치 페이지 버전 (앱의 내 정보 화면에 표시됨)
   const PLATFORM = isIOS ? '아이폰' : (/Android/i.test(ua) ? '안드로이드' : '기타');
 
   // 1) 카톡 안에서 열렸으면 일반 브라우저로 자동으로 넘김 (설치는 일반 브라우저에서만 가능)
@@ -113,11 +114,12 @@
     if (!d || !d.sa) return;
     appWin = e.source; appOrigin = e.origin;
     if (d.type === 'get') {
-      sendToApp({ type: 'token', token: lsGet(TOKEN_KEY), pushToken: lsGet(PUSH_KEY), platform: PLATFORM, open: pendingOpen });
+      sendToApp({ type: 'token', token: lsGet(TOKEN_KEY), pushToken: lsGet(PUSH_KEY), platform: PLATFORM, open: pendingOpen, ver: SHELL_VER, push: pushState() });
       pendingOpen = null;
     }
     else if (d.type === 'set' && d.token) lsSet(TOKEN_KEY, String(d.token));
     else if (d.type === 'clear') { try { localStorage.removeItem(TOKEN_KEY); } catch (err) {} }
+    else if (d.type === 'push-ui') pushUI();   // 앱의 '공지 알림 켜기' 버튼
   });
 
   // 3) '앱으로 설치' 막대
@@ -206,6 +208,26 @@
     if (t) { lsSet(PUSH_KEY, t); sendToApp({ type: 'push-token', token: t, platform: PLATFORM }); }
     return t;
   }
+  function pushState() {
+    return { supported: PUSH_OK, perm: ('Notification' in window) ? Notification.permission : '없음', standalone: isStandalone, hasToken: !!lsGet(PUSH_KEY) };
+  }
+  // 앱에서 '공지 알림 켜기'를 눌렀을 때
+  function pushUI() {
+    if (!PUSH_OK) {
+      showSheet('이 화면에서는 알림을 켤 수 없어요', isIOS
+        ? ['아이폰은 <b>홈 화면에 설치한 직원앱</b>에서만 알림을 받을 수 있어요 (iOS 16.4 이상)', '홈 화면의 직원앱 아이콘으로 열어서 다시 눌러주세요']
+        : ['크롬 또는 삼성 인터넷 최신 버전에서 열어주세요', '(확인용: 알림 지원 ' + ('Notification' in window ? 'O' : 'X') + ' / 푸시 ' + ('PushManager' in window ? 'O' : 'X') + ')']);
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      showSheet('알림이 차단되어 있어요', isIOS
+        ? ['아이폰 <b>설정 → 알림 → 직원앱</b>에서 알림 허용을 켜주세요']
+        : ['휴대폰 <b>설정 → 애플리케이션 → 직원앱(또는 크롬/삼성 인터넷) → 알림</b>에서 허용해주세요', '그다음 직원앱을 다시 열고 한 번 더 눌러주세요']);
+      return;
+    }
+    bar.style.display = 'none';
+    showPushBar();
+  }
   function showPushBar() {
     if (bar.style.display === 'flex') return;
     pbar.style.display = 'flex';
@@ -222,7 +244,7 @@
       if (perm === 'granted') {
         hidePushBar(false);
         try { await getPushToken(); showSheet('알림이 켜졌어요', ['새 공지가 올라오면 휴대폰으로 알려드려요', '밤 11시 ~ 아침 7시 공지는 아침 7시에 모아서 알려드려요']); }
-        catch (e) { showSheet('알림 설정을 마치지 못했어요', ['인터넷 연결을 확인하고 앱을 다시 열어주세요', '계속 안 되면 대표님 또는 점장님께 알려주세요']); }
+        catch (e) { showSheet('알림 설정을 마치지 못했어요', ['인터넷 연결을 확인하고 앱을 다시 열어주세요', '계속 안 되면 이 화면을 캡처해서 대표님 또는 점장님께 보내주세요', '<span style="color:#888;font-size:13px">오류: ' + String(e && (e.code || e.message) || e).replace(/</g, '&lt;') + '</span>']); }
       } else if (perm === 'denied') {
         hidePushBar(true);
         showSheet('알림이 꺼져 있어요', isIOS
@@ -244,9 +266,9 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {});
       if (!PUSH_OK) return;
-      if (Notification.permission === 'granted') getPushToken().catch(() => {});      // 이미 켠 기기: 정보 새로 고침
+      if (Notification.permission === 'granted') getPushToken().catch(() => setTimeout(showPushBar, 1500));   // 이미 켠 기기: 정보 새로 고침 (실패하면 다시 켜기 막대)
       else if (DEMO === 'push') setTimeout(showPushBar, 1500);
-      else if (Notification.permission === 'default' && isStandalone) {
+      else if (Notification.permission === 'default') {
         let closed = 0; try { closed = Number(localStorage.getItem(PCLOSE) || 0); } catch (e) {}
         if (Date.now() - closed > 3 * 864e5) setTimeout(showPushBar, 1500);
       }

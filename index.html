@@ -81,7 +81,7 @@
   const isIOS = /iPhone|iPad|iPod/i.test(ua) || DEMO === 'ios';
   const isKakao = /KAKAOTALK/i.test(ua);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  const SHELL_VER = '1119c';   // 설치 페이지 버전 (앱의 내 정보 화면에 표시됨)
+  const SHELL_VER = '1119d';   // 설치 페이지 버전 (앱의 내 정보 화면에 표시됨)
   // 일부 갤럭시: 설치앱 창이 상태바·하단버튼 뒤까지 화면 전체로 잡혀 위아래가 가려짐
   // → 창 높이가 화면 전체 높이와 같으면 상태바(위)·버튼줄(아래)만큼 비워둠
   let FIT = '';
@@ -90,10 +90,9 @@
     // 창의 가로세로 비율이 휴대폰 화면 전체 비율과 같으면 = 창이 상태바·버튼줄 뒤까지 덮고 있음
     // (화면 확대/글자 크기 설정 때문에 숫자 크기는 달라도 비율은 같음)
     const portrait = ih > iw && sh > sw;
-    const full = portrait && (ih / iw) >= (sh / sw) - 0.02;
+    const full = portrait && (ih / iw) >= (sh / sw) - 0.08;   // 상태바·버튼줄을 뺀 정상 창은 이보다 훨씬 납작함
     const on = isStandalone && /Android/i.test(navigator.userAgent) && full;
-    const k = ih / sh;   // 화면 확대 비율 보정
-    const t = on ? Math.round(32 * k) : 0, b = on ? Math.round(46 * k) : 0;
+    const t = on ? 34 : 0, b = on ? 48 : 0;   // 안드로이드 상태바 · 하단 버튼줄 높이
     const r = document.documentElement.style;
     r.setProperty('--sat', t + 'px');
     r.setProperty('--sab', b + 'px');

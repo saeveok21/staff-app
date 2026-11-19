@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root { --bar: 0px; }
-  html, body { margin: 0; height: 100%; background: #f5f3ee; }
+  html, body { margin: 0; height: 100%; background: #f5f3ee; overflow: hidden; overscroll-behavior: none; }
   body { font-family: -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif; color: #1c1f1e; }
   #app { position: fixed; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top) + var(--bar)); width: 100%; height: calc(100% - env(safe-area-inset-top) - var(--bar)); border: 0; background: #f5f3ee; }
   #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #f5f3ee; color: #6a6f6c; font-size: 15px; z-index: 5; transition: opacity .3s; }
